@@ -1,0 +1,19 @@
+[project]
+name = "qec-vqc-decoder"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.4",
+    "pennylane>=0.45.1",
+    "pymatching>=2.4.0",
+    "torch>=2.14.1",
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }

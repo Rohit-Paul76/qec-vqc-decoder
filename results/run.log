@@ -1,0 +1,55 @@
+check 1: 8 independent commuting stabilizers; X_L, Z_L commute with them and anticommute with each other
+check 2: ML   p=0.05: sampled 0.02936 +- 0.00017, exact 0.02926 (+0.6 s.e.)
+check 2: MWPM p=0.05: sampled 0.03400 +- 0.00018, exact 0.03378 (+1.2 s.e.)
+check 2: ML   p=0.15: sampled 0.19793 +- 0.00040, exact 0.19796 (-0.1 s.e.)
+check 2: MWPM p=0.15: sampled 0.21541 +- 0.00041, exact 0.21537 (+0.1 s.e.)
+MWPM and ML disagree on 116 of 256 syndromes
+training 35 (p, seed) jobs ...
+  trained p=0.01 seed=1: MLP 0.0019, MLP-small 0.0017, Linear 0.0020, VQC 0.0051
+  trained p=0.01 seed=0: MLP 0.0018, MLP-small 0.0018, Linear 0.0020, VQC 0.0023
+  trained p=0.01 seed=4: MLP 0.0017, MLP-small 0.0018, Linear 0.0020, VQC 0.0023
+  trained p=0.03 seed=2: MLP 0.0119, MLP-small 0.0136, Linear 0.0165, VQC 0.0164
+  trained p=0.01 seed=2: MLP 0.0017, MLP-small 0.0049, Linear 0.0020, VQC 0.0023
+  trained p=0.03 seed=4: MLP 0.0120, MLP-small 0.0132, Linear 0.0167, VQC 0.0169
+  trained p=0.03 seed=1: MLP 0.0129, MLP-small 0.0130, Linear 0.0166, VQC 0.0151
+  trained p=0.01 seed=3: MLP 0.0019, MLP-small 0.0049, Linear 0.0020, VQC 0.0055
+  trained p=0.06 seed=0: MLP 0.0438, MLP-small 0.0445, Linear 0.0593, VQC 0.0538
+  trained p=0.03 seed=3: MLP 0.0126, MLP-small 0.0136, Linear 0.0165, VQC 0.0180
+  trained p=0.03 seed=0: MLP 0.0126, MLP-small 0.0133, Linear 0.0165, VQC 0.0183
+  trained p=0.06 seed=1: MLP 0.0431, MLP-small 0.0452, Linear 0.0593, VQC 0.0548
+  trained p=0.06 seed=2: MLP 0.0428, MLP-small 0.0470, Linear 0.0590, VQC 0.0496
+  trained p=0.06 seed=3: MLP 0.0430, MLP-small 0.0457, Linear 0.0589, VQC 0.0533
+  trained p=0.06 seed=4: MLP 0.0421, MLP-small 0.0458, Linear 0.0588, VQC 0.0511
+  trained p=0.1 seed=1: MLP 0.1038, MLP-small 0.1101, Linear 0.1355, VQC 0.1167
+  trained p=0.1 seed=2: MLP 0.1049, MLP-small 0.1121, Linear 0.1380, VQC 0.1151
+  trained p=0.1 seed=0: MLP 0.1052, MLP-small 0.1104, Linear 0.1375, VQC 0.1150
+  trained p=0.1 seed=4: MLP 0.1041, MLP-small 0.1071, Linear 0.1381, VQC 0.1118
+  trained p=0.15 seed=1: MLP 0.2021, MLP-small 0.2035, Linear 0.2683, VQC 0.2165
+  trained p=0.1 seed=3: MLP 0.1050, MLP-small 0.1087, Linear 0.1366, VQC 0.1144
+  trained p=0.15 seed=2: MLP 0.2005, MLP-small 0.2053, Linear 0.2419, VQC 0.2081
+  trained p=0.15 seed=3: MLP 0.2020, MLP-small 0.2136, Linear 0.2479, VQC 0.2058
+  trained p=0.15 seed=4: MLP 0.2010, MLP-small 0.2063, Linear 0.2472, VQC 0.2087
+  trained p=0.15 seed=0: MLP 0.2005, MLP-small 0.2056, Linear 0.2613, VQC 0.2140
+  trained p=0.2 seed=0: MLP 0.3054, MLP-small 0.3087, Linear 0.3857, VQC 0.3257
+  trained p=0.2 seed=2: MLP 0.3067, MLP-small 0.3077, Linear 0.3740, VQC 0.3206
+  trained p=0.2 seed=3: MLP 0.3048, MLP-small 0.3108, Linear 0.3870, VQC 0.3160
+  trained p=0.2 seed=1: MLP 0.3079, MLP-small 0.3105, Linear 0.3882, VQC 0.3147
+  trained p=0.3 seed=2: MLP 0.4997, MLP-small 0.5023, Linear 0.5755, VQC 0.5065
+  trained p=0.3 seed=3: MLP 0.4982, MLP-small 0.4998, Linear 0.5702, VQC 0.5140
+  trained p=0.3 seed=1: MLP 0.4997, MLP-small 0.5018, Linear 0.5737, VQC 0.5158
+  trained p=0.3 seed=0: MLP 0.5008, MLP-small 0.4994, Linear 0.5746, VQC 0.5171
+  trained p=0.2 seed=4: MLP 0.3083, MLP-small 0.3063, Linear 0.3890, VQC 0.3181
+  trained p=0.3 seed=4: MLP 0.4989, MLP-small 0.4999, Linear 0.5745, VQC 0.5125
+check 3: no decoder beats the best possible one at any p, for any seed
+
+   p     best    MWPM                MLP          MLP-small             Linear                VQC   gap closed (MLP, MLP-small, Linear, VQC)
+ 0.01  0.0013  0.0015   0.0018 +- 0.0001   0.0030 +- 0.0017   0.0020 +- 0.0000   0.0035 +- 0.0017   -1.04, -5.96, -1.79, -7.86
+ 0.03  0.0111  0.0130   0.0124 +- 0.0004   0.0133 +- 0.0003   0.0166 +- 0.0001   0.0169 +- 0.0013   +0.31, -0.17, -1.87, -2.06
+ 0.06  0.0410  0.0470   0.0430 +- 0.0006   0.0456 +- 0.0009   0.0590 +- 0.0002   0.0525 +- 0.0021   +0.67, +0.23, -2.00, -0.91
+ 0.10  0.1019  0.1138   0.1046 +- 0.0006   0.1097 +- 0.0019   0.1371 +- 0.0011   0.1146 +- 0.0018   +0.77, +0.35, -1.94, -0.06
+ 0.15  0.1980  0.2154   0.2012 +- 0.0008   0.2068 +- 0.0039   0.2533 +- 0.0110   0.2106 +- 0.0045   +0.81, +0.49, -2.18, +0.27
+ 0.20  0.3020  0.3215   0.3066 +- 0.0015   0.3088 +- 0.0019   0.3848 +- 0.0061   0.3190 +- 0.0044   +0.76, +0.65, -3.26, +0.13
+ 0.30  0.4934  0.5089   0.4995 +- 0.0010   0.5006 +- 0.0013   0.5737 +- 0.0020   0.5132 +- 0.0041   +0.61, +0.53, -4.19, -0.28
+parameters: {'MLP': 1476, 'MLP-small': 160, 'Linear': 36, 'VQC': 180}
+saved figures/logical_error_vs_p.png
+EXIT 0
