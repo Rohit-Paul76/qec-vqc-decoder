@@ -1,14 +1,4 @@
-"""Checks, the noise sweep, and the figure.
-
-Run: uv run python run.py            -> figures/logical_error_vs_p.png, results/learned.json
-     uv run python run.py --retrain   (train the MLPs and VQCs again instead of loading)
-
-Every logical error rate here is exact: a decoder is a table over the 256 syndromes, and
-surface_code.joint_probs gives P(syndrome, class) from all 4^9 errors. The only randomness
-is in training (which samples are drawn, and the starting weights), so the learned
-decoders are trained with several seeds and their curves carry mean +- standard deviation
-over seeds.
-"""
+"""Checks, the noise sweep, and the figure."""
 import json
 import sys
 from multiprocessing import Pool
@@ -48,8 +38,6 @@ def check_code():
     assert not commutes(*lx, *lz), "X_L and Z_L must anticommute"
     rank = np.linalg.matrix_rank(np.vstack([sc.HX, sc.HZ]).astype(float))
     assert rank == 8, "stabilizers not independent"   # 9 qubits - 8 checks = 1 logical qubit
-    # A syndrome-free error that is not a stabilizer must be a logical; the ML check below
-    # would fail if labels were wrong, but test the reference errors directly too.
     s = dec.ALL_SYNDROMES
     cx, cz = sc.reference_error(s)
     assert np.array_equal(sc.syndrome(cx, cz), s), "C(s) does not have syndrome s"
@@ -59,12 +47,7 @@ def check_code():
 
 
 def check_exact_against_sampling(tables, n=1_000_000, ps=(0.05, 0.15)):
-    """Check 2: the exact logical error rates agree with plain Monte Carlo.
-
-    Draw n errors, decode each with the table, count failures. The count is binomial, so
-    the standard error is sqrt(f (1 - f) / n). Any bug in the enumeration (wrong
-    syndrome, wrong class, wrong probabilities) would show up as a gap of many standard errors.
-    """
+    """Check 2: the exact logical error rates agree with plain Monte Carlo."""
     rng = np.random.default_rng(123)
     for p in ps:
         ex, ez = sc.sample_depolarizing(p, n, rng)
@@ -132,13 +115,12 @@ def main():
         vals = np.array([[r[name]["p_L"] for r in runs if r["p"] == p] for p in PS])   # (len(PS), seeds)
         learned[name] = (vals.mean(axis=1), vals.std(axis=1, ddof=1), vals)
 
-    # Check 3: nothing beats the best possible decoder. Every number is exact, so the only
-    # slack allowed is floating-point rounding.
+    # check 3: nothing beats ML (all numbers are exact, so only rounding slack)
     for name, (_, _, vals) in [("MWPM", (None, None, mw[:, None])), *learned.items()]:
         assert np.all(vals >= ml[:, None] - 1e-12), f"{name} beat the best possible decoder: bug"
     print("check 3: no decoder beats the best possible one at any p, for any seed")
 
-    # How much of the MWPM -> best gap each learned decoder closes (1 = all of it, < 0 = worse than MWPM).
+    # fraction of the MWPM -> ML gap closed (1 = all, < 0 = worse than MWPM)
     print("\n   p     best    MWPM   " + "   ".join(f"{n:>16s}" for n in learned) + "   gap closed (MLP, MLP-small, Linear, VQC)")
     for i, p in enumerate(ps):
         cells = "   ".join(f"{learned[n][0][i]:.4f} +- {learned[n][1][i]:.4f}" for n in learned)
