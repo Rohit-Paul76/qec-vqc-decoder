@@ -1,160 +1,139 @@
-"""Distance-3 rotated surface code as bit arrays. Qubit q = 3 * row + col on a 3x3 grid;
-an error is (ex, ez), its X and Z parts."""
 import itertools
 
 import numpy as np
 
-N_QUBITS = 9
+n_q = 9
 
-# X-type stabilizers detect Z errors
-X_STABS = [
-    [0, 1, 3, 4],  # top-left square
-    [4, 5, 7, 8],  # bottom-right square
-    [1, 2],        # top edge
-    [6, 7],        # bottom edge
+x_stabs = [
+    [0, 1, 3, 4],
+    [4, 5, 7, 8],
+    [1, 2],
+    [6, 7],
 ]
-# Z-type stabilizers detect X errors
-Z_STABS = [
-    [1, 2, 4, 5],  # top-right square
-    [3, 4, 6, 7],  # bottom-left square
-    [0, 3],        # left edge
-    [5, 8],        # right edge
+z_stabs = [
+    [1, 2, 4, 5],
+    [3, 4, 6, 7],
+    [0, 3],
+    [5, 8],
 ]
 
-LOGICAL_X = [0, 3, 6]
-LOGICAL_Z = [0, 1, 2]
+x_logical = [0, 3, 6]
+z_logical = [0, 1, 2]
 
 
-def support_matrix(stabs):
-    """Rows of 0/1: row i has a 1 on every qubit stabilizer i acts on. Shape (len(stabs), 9)."""
-    m = np.zeros((len(stabs), N_QUBITS), dtype=np.uint8)
-    for i, qubits in enumerate(stabs):
-        m[i, qubits] = 1
+def to_matrix(stabs):
+    m = np.zeros((len(stabs), n_q), dtype=np.uint8)
+    for i, qs in enumerate(stabs):
+        m[i, qs] = 1
     return m
 
 
-HX = support_matrix(X_STABS)              # (4, 9), detects ez
-HZ = support_matrix(Z_STABS)              # (4, 9), detects ex
-LX = support_matrix([LOGICAL_X])[0]       # (9,)
-LZ = support_matrix([LOGICAL_Z])[0]       # (9,)
+H_x = to_matrix(x_stabs)
+H_z = to_matrix(z_stabs)
+L_x = to_matrix([x_logical])[0]
+L_z = to_matrix([z_logical])[0]
 
-N_SYNDROME_BITS = len(X_STABS) + len(Z_STABS)   # 8
-N_SYNDROMES = 2 ** N_SYNDROME_BITS              # 256
+n_bits = len(x_stabs) + len(z_stabs)
+n_syn = 2 ** n_bits
 
-CLASS_NAMES = ["I", "X", "Z", "Y"]   # class index = lx + 2 * lz
-
-
-def syndrome(ex, ez):
-    """8 syndrome bits for errors given as arrays of shape (..., 9)."""
-    s_x = (ez @ HX.T) % 2
-    s_z = (ex @ HZ.T) % 2
-    return np.concatenate([s_x, s_z], axis=-1).astype(np.uint8)
+cls_names = ["I", "X", "Z", "Y"]
 
 
-def syndrome_index(s):
-    """Turn 8 syndrome bits into one integer 0..255 (bit 0 is the most significant)."""
-    weights = 2 ** np.arange(N_SYNDROME_BITS - 1, -1, -1)
-    return (s @ weights).astype(np.int64)
+def get_syn(x_err, z_err):
+    syn_xchk = (z_err @ H_x.T) % 2
+    syn_zchk = (x_err @ H_z.T) % 2
+    return np.concatenate([syn_xchk, syn_zchk], axis=-1).astype(np.uint8)
 
 
-def index_to_bits(idx):
-    """Inverse of syndrome_index. Returns shape (..., 8)."""
+def syn_to_idx(syn):
+    pow2 = 2 ** np.arange(n_bits - 1, -1, -1)
+    return (syn @ pow2).astype(np.int64)
+
+
+def idx_to_syn(idx):
     idx = np.asarray(idx)
-    shifts = np.arange(N_SYNDROME_BITS - 1, -1, -1)
+    shifts = np.arange(n_bits - 1, -1, -1)
     return ((idx[..., None] >> shifts) & 1).astype(np.uint8)
 
 
-def logical_class(rx, rz):
-    """Which logical operator a syndrome-free Pauli (rx, rz) applies to the stored qubit."""
-    lx = (rx @ LZ) % 2
-    lz = (rz @ LX) % 2
-    return (lx + 2 * lz).astype(np.int64)
+def get_cls(x_res, z_res):
+    flip_x = (x_res @ L_z) % 2
+    flip_z = (z_res @ L_x) % 2
+    return (flip_x + 2 * flip_z).astype(np.int64)
 
 
-
-def _pure_errors():
-    """For each of the 8 syndrome bits, the lightest single-type error that sets only it."""
-    patterns = np.array(list(itertools.product([0, 1], repeat=N_QUBITS)), dtype=np.uint8)
-    patterns = patterns[np.argsort(patterns.sum(axis=1), kind="stable")]   # lightest first
-    px = np.zeros((N_SYNDROME_BITS, N_QUBITS), dtype=np.uint8)
-    pz = np.zeros((N_SYNDROME_BITS, N_QUBITS), dtype=np.uint8)
-    for i in range(len(X_STABS)):
-        target = np.eye(len(X_STABS), dtype=np.uint8)[i]
-        hit = np.all((patterns @ HX.T) % 2 == target, axis=1)
-        pz[i] = patterns[np.argmax(hit)]
-    for i in range(len(Z_STABS)):
-        target = np.eye(len(Z_STABS), dtype=np.uint8)[i]
-        hit = np.all((patterns @ HZ.T) % 2 == target, axis=1)
-        px[len(X_STABS) + i] = patterns[np.argmax(hit)]
-    return px, pz
+def pure_errs():
+    pats = np.array(list(itertools.product([0, 1], repeat=n_q)), dtype=np.uint8)
+    pats = pats[np.argsort(pats.sum(axis=1), kind="stable")]
+    x_pure = np.zeros((n_bits, n_q), dtype=np.uint8)
+    z_pure = np.zeros((n_bits, n_q), dtype=np.uint8)
+    for i in range(len(x_stabs)):
+        want = np.eye(len(x_stabs), dtype=np.uint8)[i]
+        hit = np.all((pats @ H_x.T) % 2 == want, axis=1)
+        z_pure[i] = pats[np.argmax(hit)]
+    for i in range(len(z_stabs)):
+        want = np.eye(len(z_stabs), dtype=np.uint8)[i]
+        hit = np.all((pats @ H_z.T) % 2 == want, axis=1)
+        x_pure[len(x_stabs) + i] = pats[np.argmax(hit)]
+    return x_pure, z_pure
 
 
-PURE_X, PURE_Z = _pure_errors()
+x_pure, z_pure = pure_errs()
 
 
-def reference_error(s):
-    """C(s): XOR of the pure errors for every bit that is on (Varsamopoulos et al. 2017, arXiv:1705.00857)."""
-    cx = (s @ PURE_X) % 2
-    cz = (s @ PURE_Z) % 2
-    return cx.astype(np.uint8), cz.astype(np.uint8)
+def ref_err(syn):
+    x_ref = (syn @ x_pure) % 2
+    z_ref = (syn @ z_pure) % 2
+    return x_ref.astype(np.uint8), z_ref.astype(np.uint8)
 
 
-def label(ex, ez):
-    """The decoding target: syndrome index and the logical class of E * C(s)."""
-    s = syndrome(ex, ez)
-    cx, cz = reference_error(s)
-    return syndrome_index(s), logical_class(ex ^ cx, ez ^ cz)
+def label(x_err, z_err):
+    syn = get_syn(x_err, z_err)
+    x_ref, z_ref = ref_err(syn)
+    return syn_to_idx(syn), get_cls(x_err ^ x_ref, z_err ^ z_ref)
 
 
-def correction_to_class(s, cor_x, cor_z):
-    """Express any correction (e.g. from MWPM) as a class relative to C(s)."""
-    cx, cz = reference_error(s)
-    return logical_class(cor_x ^ cx, cor_z ^ cz)
+def fix_to_cls(syn, x_fix, z_fix):
+    x_ref, z_ref = ref_err(syn)
+    return get_cls(x_fix ^ x_ref, z_fix ^ z_ref)
 
 
-
-def sample_depolarizing(p, n, rng):
-    """n errors: each qubit independently gets X, Y or Z with probability p/3 each."""
-    u = rng.random((n, N_QUBITS))
-    x = u < p / 3
-    y = (u >= p / 3) & (u < 2 * p / 3)
-    z = (u >= 2 * p / 3) & (u < p)
-    ex = (x | y).astype(np.uint8)
-    ez = (z | y).astype(np.uint8)
-    return ex, ez
+def sample_depol(p, n, rng):
+    u = rng.random((n, n_q))
+    is_x = u < p / 3
+    is_y = (u >= p / 3) & (u < 2 * p / 3)
+    is_z = (u >= 2 * p / 3) & (u < p)
+    x_err = (is_x | is_y).astype(np.uint8)
+    z_err = (is_z | is_y).astype(np.uint8)
+    return x_err, z_err
 
 
-
-def enumerate_all_errors():
-    """All 4^9 = 262,144 Pauli errors, as (ex, ez), each of shape (262144, 9)."""
-    codes = np.arange(4 ** N_QUBITS)
-    per_qubit = (codes[:, None] // 4 ** np.arange(N_QUBITS)) % 4   # 0=I, 1=X, 2=Z, 3=Y
-    ex = (per_qubit % 2).astype(np.uint8)
-    ez = (per_qubit // 2).astype(np.uint8)
-    return ex, ez
+def all_errs():
+    codes = np.arange(4 ** n_q)
+    pauli = (codes[:, None] // 4 ** np.arange(n_q)) % 4
+    x_err = (pauli % 2).astype(np.uint8)
+    z_err = (pauli // 2).astype(np.uint8)
+    return x_err, z_err
 
 
 def weight_counts():
-    """counts[s, c, w] = number of errors of weight w with syndrome s and class c."""
-    ex, ez = enumerate_all_errors()
-    s_idx, cls = label(ex, ez)
-    w = (ex | ez).sum(axis=1)
-    counts = np.zeros((N_SYNDROMES, 4, N_QUBITS + 1), dtype=np.int64)
-    np.add.at(counts, (s_idx, cls, w), 1)
+    x_err, z_err = all_errs()
+    syn, cls = label(x_err, z_err)
+    wt = (x_err | z_err).sum(axis=1)
+    counts = np.zeros((n_syn, 4, n_q + 1), dtype=np.int64)
+    np.add.at(counts, (syn, cls, wt), 1)
     return counts
 
 
-COUNTS = weight_counts()
+counts_by_wt = weight_counts()
 
 
 def joint_probs(p):
-    """P(s, c) at physical error rate p. Shape (256, 4), sums to 1."""
-    w = np.arange(N_QUBITS + 1)
-    p_weight = (1 - p) ** (N_QUBITS - w) * (p / 3) ** w
-    return COUNTS @ p_weight
+    wt = np.arange(n_q + 1)
+    p_wt = (1 - p) ** (n_q - wt) * (p / 3) ** wt
+    return counts_by_wt @ p_wt
 
 
-def exact_logical_error(table, p):
-    """Logical error rate of a decoder given as a table: syndrome index -> class."""
+def exact_err(table, p):
     P = joint_probs(p)
-    return 1.0 - P[np.arange(N_SYNDROMES), table].sum()
+    return 1.0 - P[np.arange(n_syn), table].sum()
